@@ -124,7 +124,7 @@ BTree索引 Hash索引
 	5 、增大吞吐量提升系统性能， – X X : + U s e P a r a l l e l G C ，
 	–XX:+UseParallelOldGC，–XX:ParallelGC-Threads（CPU核心数相等）
 	6、使用非占有的垃圾回收器，–XX:+UseConcMarkSweepGC
-	7. -XX:PermSize -xx:PermMaxSize -xx:PermNewSize
+	7. -XX:PermSize -xx:MaxPermSize -xx:NewPermSize
 	--------------------------------------
 
 

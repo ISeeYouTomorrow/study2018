@@ -1,0 +1,171 @@
+1.缓存支撑高并发 ，缓存失效即可以同步数据库与缓存。
+2.mysql数据库优化方式： 读写分离；分库分表；数据库集群。
+3.缓存失效瞬间导致大量请求访问数据库，数据库连接（300-700）资源不足，导致请求拒绝。
+4.jvm锁：synchorized Lock RetreentLock(互斥锁)
+	多线程先从缓存获取数据->缓存没有则加锁->再从缓存获取数据->从数据库获取数据，放入缓存->解锁，其他线程从缓存获取数据。
+
+5.分布式锁：zookeeper锁 redis锁
+
+6.volatile 多线程并发时保证可见性，但是不保证同步性，可以用于一个修改多个读取的场景。必须自己做同步控制。voliate 一般在并发环境下使用，不能保证线程安全，只能保证多线程读取最新的，再多线程环境需要使用同步机制保证写的安全性
+
+7.分布式系统：一件事情由多个系统协同完成；集群：多个机器完成同一件工作。微服务即一种分布式架构方式，核心是去中心化。RPC核心是客户端和服务端的协议/寻址/序列化(可存储或传输的数据json/xml/二进制数据)反序列化（内存数据）。序列化数据便于压缩存储/网络传输。
+8.分布式系统的事务处理：ACID(原子性 一致性 隔离性 持久性)（Automic Consistency Isolation Durability）
+CAP(一致性Consistency 可用性Availability 容错性Partition tolerance)
+例如：
+	1XA协议: 数据库厂商上线JTA数据库事务（一个系统可以操作其他系统数据库）
+	2后台任务定期校对数据(妥协方式，可能会有误差)
+	3消息队列最终一致
+	4 tcc(try confirm cancel)机制
+分布式特点：任务拆分 节点分工 分布式解决的是高可用，高并发问题。
+集群：解决高可用
+
+
+9.Redis 核心：网络数据包	resp协议
+10. OAuth(Open Authorization,开放授权)
+11 mysql 索引 BTree树，普通索引 唯一索引(允许null) 主键索引（不允许null聚簇索引:相关数据存储位置接近），
+组合索引（最左策略），覆盖索引(最快)，全文索引
+BTree索引 Hash索引
+12.nginx -t (启动)  nginx -s reload （配置生效重启）nginx -t stop (安全的关闭nginx) taskkill /im nginx.exe /f  (强制杀死)
+13.  cd my-project
+     npm install
+     npm run dev
+
+	 "dev": "node build/dev-server.js",
+
+	 "build": "node build/build.js",
+	 http://download.oracle.com/otn-pub/java/jdk/8u171-b11/512cd62ec5174c3487ac17c61aaa89e8/jdk-8u171-linux-x64.tar.gz
+14.zookeeper 是一个针对分布式系统提供配置维护，名字服务，分布式同步，组服务等的可靠的协调系统。zookeeper可以集群复制，通过zab（zookeerper atomic broadcast）协议保持数据一致性。
+	协议包括两个阶段：leader election 和Atomic Broadcast阶段。
+15.
+	vim - 创建文件 vim newfile
+	vim - 光标移动	通过 ↑↓←→按键进行光标的移动。如果没有 ↑↓←→按键，可以通过 k上   h左   j下   l右  来进行移动。
+	vim - 退出
+		执行以下命令之前可以先按一下  Esc  键，以确保处于视图模式
+		：命令严格区分大小写
+		- 保存并退出       :wq + 回车键
+		- 保存并退出       ZZ
+		- 不保存退出       :q! +回车键
+
+	vim - 删除
+		在视图模式下删除当前光标处的文本      x键
+		在视图模式下删除当前光标处的整行 dd
+	vim - 编辑模式
+		进入编辑模式 i键
+		插入按a键
+	vim - 撤销
+		撤销上一次的操作，等同于Ctrl + z u键
+		重做 Ctrl + r
+	vim - 文本替换
+		%s/被替换的文本/替换成的文本，比如%s/o/+++会把所有的o替换成+++。如图所示
+	vim - 文本搜索
+		搜索 /欲搜索的文本，比如  /o 会搜索文本中所有的o，如下图
+		找到文本后，通过n和N命令切换到上一个和下一个
+	vim - 复制和粘贴
+		复制光标处所在的行 yy 粘贴 p
+16 jdk和zookeepe环境搭建
+		#set java environment
+		JAVA_HOME=/usr/java/jdk1.8.0_171
+		JRE_HOME=/usr/java/jdk1.8.0_171/jre
+		CLASS_PATH=.:$JAVA_HOME/lib/dt.jar:$JAVA_HOME/lib/tools.jar:$JRE_HOME/lib
+		PATH=$PATH:$JAVA_HOME/bin:$JRE_HOME/bin
+		export JAVA_HOME JRE_HOME CLASS_PATH PATH
+
+
+		#set zookeeper
+		export ZOOKEEPER_INSTALL=/usr/zooKeeper/zookeeper
+		export PATH=$PATH:$ZOOKEEPER_INSTALL/bin
+17 aop:静态代理（aspect，修改java字节码，植入字节码方式）；动态代理：cglib/jdk proxy，在内存生成代理对象，包含被代理类的全部方法，在指定的位置执行代理。
+18 Windows /bin/catalina.bat ;linux /bin/catalina.sh
+19 参数描述符 Ljava/lang/String  [可达性分析法  引用计数法]
+20 yum install nginx
+   yum install java-1.8.0-openjdk.x86_64
+
+21 +++++++++++++++++++++分布式系统架构+++++++++++++++++++++++
+	大前端(h5浏览器/app/pc/物联网)
+	CDN(内容分发网络):js/css/apk/png静态资源分发
+   DNS(域名解析，负载均衡&高可用:一个域名对应多个ip);访问网址前向DNS服务器发送udp请求，获取对应ip地址。
+   硬件负载均衡：(F5/redware)---软件负载均衡：nginx
+   保障性能：
+	   读多写少：缓存(redis memcache,Nosql)
+	   写多读少：队列(kafka rabbitmq activemq)
+	   限流（阻断用户操作：成本 能力）
+    分布式系统管理：
+	解耦：mq可以做远程调用事务处理,(生产者/消费者 ，分布式事务)
+	配置中心：（disconf qconf diemond springcloud config）
+	日志系统管理：(ELK:)日志收集汇总及索引
+	系统监控：
+		命令：linux free TOP命令
+		链路监控：zabbix springcloud-zipkin/sleuth
+		日志监控：elk
+		代码监控：java metrics(形成图表)
+	持续集成，自动化jenkins
+	Docker+云计算，服务编排
+	历史：代码编译-war包-tomcat解压缩-启动
+
+	自动化部署：jenkins docker
+	++++++++++++++++++++++++++++++++++++++++++++
+	GCRoots对象：所有正在运行的线程的栈上的引用变量。所有全局变量，所有的ClassLoader。
+	java虚拟机栈是线程私有的，生命周期与线程相爱难沟通。对应每个方法：局部变量/操作栈/动态链接/返回值。
+	方法区：线程共享内存区域，类信息/常量/静态变量/即时编译的代码等。
+	即时编译优化：
+	1、-XX:-DisableExplicitGC，禁用了System.gc()的显示调用
+	2、逃逸分析默认是启用的，-XX:+DoEscapeAnalysis。后续有三种优
+		化会进行：栈内分配，同步消除，标量替换
+	3、偏向锁，关闭： -XX:-UseBiasedLocking
+	-XX:+UseBiasedLocking -XX:BiasedLockingStartupDelay=0
+	4、指针压缩，-XX:+UseCompressedOops
+	5、getter方法优化，-XX:UseFastAccessorMethods
+	-------------------------------------
+	内存优化策略：
+	1、将新对象预留在年轻代，-XX:TargetSurvivorRatio=90
+	2、让大对象进入年老代，-XX:PetenureSizeThreshold=1000000，1M
+	3、设置对象进入年老代的年龄，-XX:MaxTenuringThreshold=31
+	4、稳定的 Java 堆 ，Xmx与Xms相同
+	5 、增大吞吐量提升系统性能， – X X : + U s e P a r a l l e l G C ，
+	–XX:+UseParallelOldGC，–XX:ParallelGC-Threads（CPU核心数相等）
+	6、使用非占有的垃圾回收器，–XX:+UseConcMarkSweepGC
+	7. -XX:PermSize -xx:PermMaxSize -xx:PermNewSize
+	--------------------------------------
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

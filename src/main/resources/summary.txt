@@ -306,31 +306,362 @@ BTree索引 Hash索引
     (windows)java -jar -Dc=products -Dauto D:/study/solr/solr-7.3.0/example/exampledocs/post.jar D:/study/solr/solr-7.3.0/example/exampledocs/*
 33 UML图:
     泛化(实线三角箭头):父类与子类关系，例如动物与狗
-    实现(虚线三角箭头):接口与实现类关系，例如飞翔与鸟
+    实现(虚线三角箭头):接口与实现类关系，例如飞翔与鸟...
     关联(实线):类与类关系，一个类能够访问另一个类的属性或者方法，例如：老师与学生，学生与课程，可以是1对多也可以是多对多。
     聚合(空心菱形实线箭头):成员变量,整天与部分的关系，但是部分可以脱离整体，例如汽车与轮胎。
     组合(实心菱形实线箭头):成员变量,整天与部分的关系，但是部分不可以脱离整体，例如鸟与翅膀。
     依赖(实线箭头):方法的形参或者局部变量;例如：汽车的奔跑方法(汽油)
+34 分布式监控：
+    链路监控：springcloud sleuth +zipkin;sleuth记录服务接口和内部方法调用，zipkin负责存储和可视化查询
+    日志监控：elk(elasticsearch + kibana;elasticsearch提供分布式全文搜索引擎，基于Restful API web接口。kibana是es前端展示工具，可用于汇总，分析和搜索重要数据。
+    代码监控：metrics+grafanal;代码执行的吞吐量(运行时间-垃圾回收时间/运行时间)
 
+35 负载均衡：
+    # 服务端负载均衡：对客户端屏蔽具体的接口地址，对外仅暴露负载均衡器，所有请求经过
+    统一的负载服务；有硬件负载(f5,radware)和软件负载(nginx,apache,lvs)
+    优势：统一管理，控制；对外部调用友好，屏蔽了微服务地址多变的复杂性；
+    劣势：性能要求高，流量大对负载服务本身有很高的要求；管理复杂，大多数服务端负载器
+    需要手工配置服务实例信息；
+    # 客户端负载均衡：由客户端自己选择目标服务器，直调对应的地址；dubbo(源码参考
+    com.alibaba.dubbo.rpc.cluster.LoadBalance)，springcloud(ribbon)都是客户端
+    负载均衡；
+    优势：性能好，可以根据具体应用微调负载策略；易管理，服务实例信息自发现
+    劣势：服务实例信息在多客户端之间的不同步；通常是集群内部使用；
+36 分布式配置中心：
+    类似产品有很多：360 Qconf，百度 Disconf，淘宝 Diamond
+    参考：https://www.cnblogs.com/zhangxh20/p/5464103.html
+    springcloudconfig 分布式配置中心，用来解决多配置的问题；
+    将配置文件统一存储在gitlab，svn，filesystem，并支持敏感信息的加密存储
+    (configserver或者client均可解密)
+37 垃圾回收：
+    1 引用计数法：
+    2 可达性分析法 (Root对象：虚拟机栈变量应用的对象，方法区常量引用的对象 ，方法区静态属性引用的变量，本地方法引用的对象)
+      对象不满足可达性分析并非一定被回收，需要两次标记，取决于对象的finalize()方法中是否被根对象引用
+      【如果对象在进行可达性分析后发现没有与GCRoots相连的引用链，则该对象被第一次标记并进行一次筛选，
+        筛选条件为是否有必要执行该对象的finalize方法，若对象没有覆盖finalize方法或者该finalize方法是否已经被虚拟机执行过了，
+        则均视作不必要执行该对象的finalize方法，即该对象将会被回收。反之，若对象覆盖了finalize方法并且该finalize方法并没有被执行过，那么，这个对象会被放置在一个叫F-Queue的队列中，之后会由虚拟机自动建立的、优先级低的Finalizer线程去执行，而虚拟机不必要等待该线程执行结束，即虚拟机只负责建立线程，其他的事情交给此线程去处理。
+        对F-Queue中对象进行第二次标记，如果对象在finalize方法中拯救了自己，即关联上了GCRoots引用链，如把this关键字赋值给其他变量，
+        那么在第二次标记的时候该对象将从“即将回收”的集合中移除，如果对象还是没有拯救自己，那就会被回收。
+        如下代码演示了一个对象如何在finalize方法中拯救了自己，然而，它只能拯救自己一次，第二次就被回收了】
+    3 四大引用回收（强引用 弱引用(内存不够时回收) 软引用(下次gc回收) 虚引用(gc通知))
+    4 方法区的垃圾回收：
+        无用的类：
+           类的所有实例都被回收 && 加载该类的ClassLoader已经被回收 && 该类对应的java.lang.Class对象没有在任何地方被引用，无法在任何地方通过反射访问该类的方法。
+        废弃常量
+            当前系统没有任何一个对象引用了常量池中的该常量，其他类（接口）、方法、字段的符号引用也与此类似
 
+    5 gc算法
+        标记清除算法：空间碎片
+        复制算法：空间浪费，预留一半的空间
+        标记整理算法：让所有存活对象都向一端移动，然后直接清理掉边界以外的内存。
+        分代收集算法：大批对象死去、少量对象存活的（新生代），使用复制算法，复制成本低；对象存活率高、没有额外空间进行分配担保的（老年代），采用标记-清理算法或者标记-整理算法。
+                                       |         young
+        -------------- --------------------------------------------------
+        |PermSpace    |      Old       |       eden        |  from |  to |
+        ------------------------------------------------------------------
+                      |                  Heap
+        Serial收集器:采用复制算法的单线程的收集器 运行在Client模式下的默认新生代收集器
+        ParNew收集器:ParNew收集器其实就是Serial收集器的多线程版本 Server模式下的虚拟机首选的新生代收集器 -XX:ParallelGCThreads参数来限制个数
+        Parallel Scavenge收集器 “吞吐量优先收集器”
+        Serial Old收集器 Serial收集器的老年代版本
+        Parallel Old收集器  Parallel Scavenge收集器的老年代版本，使用多线程和“标记-整理”算法
+        CMS（Conrrurent Mark Sweep）收集器是以获取最短回收停顿时间为目标的收集器。使用标记 - 清除算法，
+        G1收集器
+            并行和并发。使用多个CPU来缩短Stop The World停顿时间，与用户线程并发执行。 分代收集。独立管理整个堆 空间整合。基于标记 - 整理算法，无内存碎片产生。可预测的停顿
+38 分布式锁：(秒杀/抽奖/抢购)
+    1）基于数据库锁实现分布式锁（通过获取数据库的排他锁完成业务操作处理method_name需要建立唯一索引）:
+     public boolean lock(){
+         connection.setAutoCommit(false)
+         while(true){
+             try{
+                 result = select * from methodLock where method_name=xxx for update;
+                 if(result==null){
+                     return true;
+                 }
+             }catch(Exception e){
 
+             }
+             sleep(1000);
+         }
+         return false;
+     }
+     public void unlock(){
+          connection.commit();
+      }
+   2）基于缓存实现分布式锁（使用redis memcache集群部署）
+    可以使用缓存来代替数据库来实现分布式锁，这个可以提供更好的性能，同时，很多缓存服务都是集群部署的，可以避免单点问题。
+    并且很多缓存服务都提供了可以用来实现分布式锁的方法，比如Tair的put方法，redis的setnx方法等。
+    并且，这些缓存服务也都提供了对数据的过期自动删除的支持，可以直接设置超时时间来控制锁的释放。
+    使用缓存实现分布式锁的优点
+    性能好，实现起来较为方便。
+    使用缓存实现分布式锁的缺点
+    通过超时时间来控制锁的失效时间并不是十分的靠谱。
+    public boolean trylock(String key) {
+        ResultCode code = ldbTairManager.put(NAMESPACE, key, "This is a Lock.", 2, 0);
+        if (ResultCode.SUCCESS.equals(code))
+            return true;
+        else
+            return false;
+    }
+    public boolean unlock(String key) {
+        ldbTairManager.invalid(NAMESPACE, key);
+    }
+    redis命令：
+    setnx(key, value)：“set if not exits”，若该key-value不存在，则成功加入缓存并且返回1，否则返回0。
+    get(key)：获得key对应的value值，若不存在则返回nil。
+    getset(key, value)：先获取key对应的value值，若不存在则返回nil，然后将旧的value更新为新的value。
+    expire(key, seconds)：设置key-value的有效期为seconds秒。
+    3）基于Zookeeper实现分布式锁：
+        基于zookeeper临时有序节点可以实现的分布式锁，每个客户端对某个方法加锁时，在zookeeper上的与该方法对应的指定节点的目录下，
+        生成一个唯一的瞬时有序节点。 判断是否获取锁的方式很简单，只需要判断有序节点中序号最小的一个。 当释放锁的时候，
+        只需将这个瞬时节点删除即可。同时，其可以避免服务宕机导致的锁无法释放，而产生的死锁问题
+        可以直接使用zookeeper第三方库Curator客户端，这个客户端中封装了一个可重入的锁服务。
+        public boolean tryLock(long timeout, TimeUnit unit) throws InterruptedException {
+            try {
+                return interProcessMutex.acquire(timeout, unit);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+            return true;
+        }
+        public boolean unlock() {
+            try {
+                interProcessMutex.release();
+            } catch (Throwable e) {
+                log.error(e.getMessage(), e);
+            } finally {
+                executorService.schedule(new Cleaner(client, path), delayTimeForClean, TimeUnit.MILLISECONDS);
+            }
+            return true;
+        }
+39 线程池及原理
+     多线程技术主要解决处理器单元内多个线程执行的问题，它可以显著减少处理器单元的闲置时间，增加处理器单元的吞吐能力。
+    重用线程池中的线程,减少因对象创建,销毁所带来的性能开销;
+    能有效的控制线程的最大并发数,提高系统资源利用率,同时避免过多的资源竞争,避免堵塞;
+    能够多线程进行简单的管理,使线程的使用简单、高效。
+    Executor 框架包括类：Executor，Executors，ExecutorService，ThreadPoolExecutor ，Callable和Future、FutureTask的使用等。
+    线程池包括4个部分：
+    1）线程池管理器（ThreadPool）:用于创建并管理线程池，包括创建/销毁/添加任务。
+    2）工作线程（PoolWorker）：线程池中的线程，在没有任务时处于等待状态，可以循环的执行任务。
+    3）任务接口（Task）：每个任务必须实现的接口，以供工作线程调度任务的执行，它主要规定了任务的入口，任务执行完后的收尾工作，任务的执行状态等；
+    4）任务队列（TaskQueue）：用于存放没有处理的任务，提供一种缓冲机制。
+    线程池提交的方法：submit()/execute();execute无返回值，可以看出submit开启的是有返回结果的任务，会返回一个FutureTask对象，这样就能通过get()方法得到结果。submit最终调用的也是execute(Runnable runable)，submit只是将Callable对象或Runnable封装成一个FutureTask对象，因为FutureTask是个Runnable，所以可以在execute中执行
+    线程池刚创建时，里面没有一个线程。任务队列是作为参数传进来的。不过，就算队列里面有任务，线程池也不会马上执行它们。
+    当调用 execute() 方法添加一个任务时，线程池会做如下判断：
+        如果正在运行的线程数量小于 corePoolSize，那么马上创建线程运行这个任务；
+        如果正在运行的线程数量大于或等于 corePoolSize，那么将这个任务放入队列；
+        如果这时候队列满了，而且正在运行的线程数量小于 maximumPoolSize，那么还是要创建非核心线程立刻运行这个任务；
+        如果队列满了，而且正在运行的线程数量大于或等于 maximumPoolSize，那么线程池会抛出异常RejectExecutionException。
+    当一个线程完成任务时，它会从队列中取下一个任务来执行。
+    当一个线程无事可做，超过一定的时间（keepAliveTime）时，线程池会判断，如果当前运行的线程数大于 corePoolSize，那么这个线程就被停掉。
+    所以线程池的所有任务完成后，它最终会收缩到 corePoolSize 的大小。
+    生成线程池采用了工具类Executors的静态方法，以下是几种常见的线程池。
+    SingleThreadExecutor：单个后台线程 (其缓冲队列是无界的)创建一个单线程的线程池。这个线程池只有一个核心线程在工作，也就是相当于单线程串行执行所有任务。如果这个唯一的线程因为异常结束，那么会有一个新的线程来替代它。此线程池保证所有任务的执行顺序按照任务的提交顺序执行。
+    FixedThreadPool：只有核心线程的线程池,大小固定 (其缓冲队列是无界的) 。创建固定大小的线程池。每次提交一个任务就创建一个线程，直到线程达到线程池的最大大小。线程池的大小一旦达到最大值就会保持不变，如果某个线程因为执行异常而结束，那么线程池会补充一个新线程。
+    CachedThreadPool：无界线程池，可以进行自动线程回收。如果线程池的大小超过了处理任务所需要的线程，那么就会回收部分空闲（60秒不执行任务）的线程，当任务数增加时，此线程池又可以智能的添加新线程来处理任务。此线程池不会对线程池大小做限制，线程池大小完全依赖于操作系统（或者说JVM）能够创建的最大线程大小。SynchronousQueue是一个是缓冲区为1的阻塞队列。
+    ScheduledThreadPool：核心线程池固定，大小无限的线程池。此线程池支持定时以及周期性执行任务的需求。创建一个周期性执行任务的线程池。如果闲置,非核心线程池会在DEFAULT_KEEPALIVEMILLIS时间内回收。
 
+    线程复用原理：
+    线程生命周期：  在线程的生命周期中，它要经过新建(New)、就绪（Runnable）、运行（Running）、阻塞(Blocked)和死亡(Dead)5种状态
+        实现线程复用的原理应该就是要保持线程处于存活状态（就绪，运行或阻塞）。ThreadPoolExecutor从任务列表BlockingQueue是个阻塞队列，BlockingQueue.take()得到如果是空，则进入等待状态直到BlockingQueue有新的对象被加入时唤醒阻塞的线程。所以一般情况Thread的run()方法就不会结束,而是不断执行从workQueue里的Runnable任务，这就达到了线程复用的原理了。
+    控制最大并发数:
+        线程池工作过程中的添加任务的情况：
+        * 如果正在运行的线程数量小于 corePoolSize，那么马上创建线程运行这个任务；
+        * 如果正在运行的线程数量大于或等于 corePoolSize，那么将这个任务放入队列；
+        * 如果这时候队列满了，而且正在运行的线程数量小于 maximumPoolSize，那么还是要创建非核心线程立刻运行这个任务；
+        * 如果队列满了，而且正在运行的线程数量大于或等于 maximumPoolSize，那么线程池会抛出异常RejectExecutionException。
+         通过addWorker如果成功创建新的线程成功，则通过start()开启新线程，同时将firstTask作为这个Worker里的run()中执行的第一个任务。
+        虽然每个Worker的任务是串行处理，但如果创建了多个Worker，因为共用一个workQueue，所以就会并行处理了。
+        所以根据corePoolSize和maximumPoolSize来控制最大并发数
+     在ThreadPoolExecutor有个ctl的AtomicInteger变量。通过这一个变量保存了两个内容：
+        所有线程的数量;每个线程所处的状态;其中低29位存线程数，高3位存runState，通过位运算来得到不同的值。
 
+    RUNNING状态：线程池正常运行，可以接受新的任务并处理队列中的任务；
+    SHUTDOWN状态：不再接受新的任务，但是会执行队列中的任务；
+    STOP状态：不再接受新任务，不处理队列中的任务
+    shutdown这个方法会将runState置为SHUTDOWN，会终止所有空闲的线程，而仍在工作的线程不受影响，所以队列中的任务人会被执行。
+    shutdownNow方法将runState置为STOP。和shutdown方法的区别，这个方法会终止所有的线程，所以队列中的任务也不会被执行了。
 
+----------------总结---------------------
+    1 线程池之后到被执行的整个过程有了一个基本的了解，下面总结一下：
+    1）首先，要清楚corePoolSize和maximumPoolSize的含义；(corePoolSize:线程池核心线程数，maximumPoolSize：线程池最大可支撑线程数)
+    2）其次，要知道Worker是用来起到什么作用的；(Worker核心工作线程，一直处于可运行状态，从任务列表获取任务执行)
+    3）要知道任务提交给线程池之后的处理策略，这里总结一下主要有4点：
+        如果当前线程池中的线程数目小于corePoolSize，则每来一个任务，就会创建一个线程去执行这个任务；
+        如果当前线程池中的线程数目>=corePoolSize，则每来一个任务，会尝试将其添加到任务缓存队列当中，若添加成功，则该任务会等待空闲线程将其取出去执行；若添加失败（一般来说是任务缓存队列已满），则会尝试创建新的线程去执行这个任务；
+        如果当前线程池中的线程数目达到maximumPoolSize，则会采取任务拒绝策略进行处理；
+        如果线程池中的线程数量大于 corePoolSize时，如果某线程空闲时间超过keepAliveTime，线程将被终止，直至线程池中的线程数目不大于corePoolSize；如果允许为核心池中的线程设置存活时间，那么核心池中的线程空闲时间超过keepAliveTime，线程也会被终止。
+    线程池中的线程初始化
+    默认情况下，创建线程池之后，线程池中是没有线程的，需要提交任务之后才会创建线程。
+    在实际中如果需要线程池创建之后立即创建线程，可以通过以下两个方法办到：
+        prestartCoreThread()：初始化一个核心线程；
+        prestartAllCoreThreads()：初始化所有核心线程
+    下面是这2个方法的实现：
+    public boolean prestartCoreThread() {
+        return addIfUnderCorePoolSize(null); //注意传进去的参数是null
+    }
+    public int prestartAllCoreThreads() {
+        int n = 0;
+        while (addIfUnderCorePoolSize(null))//注意传进去的参数是null
+            ++n;
+        return n;
+    }
+    注意上面传进去的参数是null，根据第2小节的分析可知如果传进去的参数为null，则最后执行线程会阻塞在getTask方法中的
+    r = workQueue.take();
+    即等待任务队列中有任务。
 
+    2 任务缓存队列及排队策略
+    在前面我们多次提到了任务缓存队列，即workQueue，它用来存放等待执行的任务。
+    workQueue的类型为BlockingQueue<Runnable>，通常可以取下面三种类型：
+    1）ArrayBlockingQueue：基于数组的先进先出队列，此队列创建时必须指定大小；
+    2）LinkedBlockingQueue：基于链表的先进先出队列，如果创建时没有指定此队列大小，则默认为Integer.MAX_VALUE；
+    3）synchronousQueue：这个队列比较特殊，它不会保存提交的任务，而是将直接新建一个线程来执行新来的任务。
 
+   3任务拒绝策略
+    当线程池的任务缓存队列已满并且线程池中的线程数目达到maximumPoolSize，如果还有任务到来就会采取任务拒绝策略，通常有以下四种策略：
+    ThreadPoolExecutor.AbortPolicy:丢弃任务并抛出RejectedExecutionException异常。
+    ThreadPoolExecutor.DiscardPolicy：也是丢弃任务，但是不抛出异常。
+    ThreadPoolExecutor.DiscardOldestPolicy：丢弃队列最前面的任务，然后重新尝试执行任务（重复此过程）
+    ThreadPoolExecutor.CallerRunsPolicy：由调用线程处理该任务
 
+    4 线程池的关闭
+    ThreadPoolExecutor提供了两个方法，用于线程池的关闭，分别是shutdown()和shutdownNow()，其中：
+        shutdown()：不会立即终止线程池，而是要等所有任务缓存队列中的任务都执行完后才终止，但再也不会接受新的任务
+        shutdownNow()：立即终止线程池，并尝试打断正在执行的任务，并且清空任务缓存队列，返回尚未执行的任务
 
+    5 线程池容量的动态调整
+    ThreadPoolExecutor提供了动态调整线程池容量大小的方法：setCorePoolSize()和setMaximumPoolSize()，
+        setCorePoolSize：设置核心池大小
+        setMaximumPoolSize：设置线程池最大能创建的线程数目大小
+    当上述参数从小变大时，ThreadPoolExecutor进行线程赋值，还可能立即创建新的线程来执行任务。
+----------------总结end---------------------
+40  sql ---- EXPLAIN
+     id | select_type | table      | type   | possible_keys | key     | key_len | ref   | rows | Extra
+     1)id如果相同，可以认为是一组，从上往下顺序执行；在所有组中，id值越大，优先级越高，越先执行
+     2)select_type:表示查询中每个语句的类型复杂或简单
+       a. SIMPLE：查询中不包含子查询或者UNION
+       b. PRIMARY: 查询中若包含任何复杂的子部分，最外层查询则被标记为PRIMARY
+       c. 在SELECT或WHERE列表中包含了子查询，该子查询被标记为：SUBQUERY
+       d. 在FROM列表中包含的子查询被标记为：DERIVED（衍生）用来表示包含在from子句中的子查询的select，mysql会递归执行并将结果放到一个临时表中。
+          服务器内部称为"派生表"，因为该临时表是从子查询中派生出来的
+       e.若第二个SELECT出现在UNION之后，则被标记为UNION；若UNION包含在FROM子句的子查询中，外层SELECT将被标记为：DERIVED
+       f. 从UNION表获取结果的SELECT被标记为：UNION RESULT
+          SUBQUERY和UNION还可以被标记为DEPENDENT和UNCACHEABLE。
+          DEPENDENT意味着select依赖于外层查询中发现的数据。
+          UNCACHEABLE意味着select中的某些 特性阻止结果被缓存于一个item_cache中。
+     3).type
+          表示MySQL在表中找到所需行的方式，又称“访问类型”，常见类型如下(从左到右，性能从最差到最好):
+          ALL, index,  range, ref, eq_ref, const, system, NULL
+        a. ALL：Full Table Scan， MySQL将遍历全表以找到匹配的行
+        b. index：Full Index Scan，index与ALL区别为index类型只遍历索引树
+        c. range:索引范围扫描，对索引的扫描开始于某一点，返回匹配值域的行。显而易见的索引范围扫描是带有between或者where子句里带有<, >查询。当mysql使用索引去查找一系列值时，例如IN()和OR列表，也会显示range（范围扫描）,当然性能上面是有差异的。
+        d. ref：使用非唯一索引扫描或者唯一索引的前缀扫描，返回匹配某个单独值的记录行
+        e. eq_ref：类似ref，区别就在使用的索引是唯一索引，对于每个索引键值，表中只有一条记录匹配，简单来说，就是多表连接中使用primary key或者 unique key作为关联条件
+        f. const、system：当MySQL对查询某部分进行优化，并转换为一个常量时，使用这些类型访问。如将主键置于where列表中，MySQL就能将该查询转换为一个常量
+        g. NULL：MySQL在优化过程中分解语句，执行时甚至不用访问表或索引，例如从一个索引列里选取最小值可以通过单独索引查找完成。
+     4). possible_keys
+        指出MySQL能使用哪个索引在表中找到记录，查询涉及到的字段上若存在索引，则该索引将被列出，但不一定被查询使用
+     5). key
+        显示MySQL在查询中实际使用的索引，若没有使用索引，显示为NULL
+     6). key_len
+        表示索引中使用的字节数，可通过该列计算查询中使用的索引的长度（key_len显示的值为索引字段的最大可能长度，并非实际使用长度，即key_len是根据表定义计算而得，不是通过表内检索出的）
+    7). ref
+        表示上述表的连接匹配条件，即哪些列或常量被用于查找索引列上的值
+    8). rows
+        表示MySQL根据表统计信息及索引选用情况，估算的找到所需的记录所需要读取的行数
+    9). Extra
+        包含不适合在其他列中显示但十分重要的额外信息
+        a. Using index
+            该值表示相应的select操作中使用了覆盖索引（Covering Index）
+            覆盖索引（Covering Index）
+            MySQL可以利用索引返回select列表中的字段，而不必根据索引再次读取数据文件
+            包含所有满足查询需要的数据的索引称为覆盖索引（Covering Index）
+            注意：如果要使用覆盖索引，一定要注意select列表中只取出需要的列，不可select *，因为如果将所有字段一起做索引会导致索引文件过大，查询性能下降
+        b. Using where
+            表示mysql服务器将在存储引擎检索行后再进行过滤。许多where条件里涉及索引中的列，当（并且如果）它读取索引时，就能被存储引擎检验，因此不是所有带where字句的查询都会显示"Using where"。有时"Using where"的出现就是一个暗示：查询可受益与不同的索引。
+        c. Using temporary
+            表示MySQL需要使用临时表来存储结果集，常见于排序和分组查询
+            这个值表示使用了内部临时(基于内存的)表。一个查询可能用到多个临时表。有很多原因都会导致MySQL在执行查询期间创建临时表。两个常见的原因是在来自不同表的上使用了DISTINCT,或者使用了不同的ORDER BY和GROUP BY列。可以强制指定一个临时表使用基于磁盘的MyISAM存储引擎。这样做的原因主要有两个：
+            1)内部临时表占用的空间超过min(tmp_table_size，max_heap_table_size)系统变量的限制
+            2)使用了TEXT/BLOB 列
+        d. Using filesort
+            MySQL中无法利用索引完成的排序操作称为“文件排序”
+        e. Using join buffer
+            改值强调了在获取连接条件时没有使用索引，并且需要连接缓冲区来存储中间结果。如果出现了这个值，那应该注意，根据查询的具体情况可能需要添加索引来改进能。
+        f. Impossible where
+            这个值强调了where语句会导致没有符合条件的行。
+        h. Select tables optimized away
+            这个值意味着仅通过使用索引，优化器可能仅从聚合函数结果中返回一行.
+        I. Index merges
+            当MySQL 决定要在一个给定的表上使用超过一个索引的时候，就会出现以下格式中的一个，详细说明使用的索引以及合并的类型。
+            Using sort_union(...)
+            Using union(...)
+            Using intersect(...)
 
+41 mysql索引：
+        磁盘一次IO时，不光把当前磁盘地址的数据，而是把相邻的数据也都读取到内存缓冲区内，每一次IO读取的数据我们称之为一页(page).
 
+        索引分类
+        1.普通索引index :加速查找
+        2.唯一索引
+            主键索引：primary key ：加速查找+约束（不为空且唯一）
+            唯一索引：unique：加速查找+约束 （唯一）
+        3.联合索引
+            -primary key(id,name):联合主键索引
+            -unique(id,name):联合唯一索引
+            -index(id,name):联合普通索引
+        4.全文索引fulltext :用于搜索很长一篇文章的时候，效果最好。
+        5.空间索引spatial :了解就好，几乎不用
+            举个例子来说，比如你在为某商场做一个会员卡的系统。
+            这个系统有一个会员表
+            有下列字段：
+            会员编号 INT
+            会员姓名 VARCHAR(10)
+            会员身份证号码 VARCHAR(18)
+            会员电话 VARCHAR(10)
+            会员住址 VARCHAR(50)
+            会员备注信息 TEXT
+            那么这个 会员编号，作为主键，使用 PRIMARY
+            会员姓名 如果要建索引的话，那么就是普通的 INDEX
+            会员身份证号码 如果要建索引的话，那么可以选择 UNIQUE （唯一的，不允许重复）
+            #除此之外还有全文索引，即FULLTEXT
+            会员备注信息 ， 如果需要建索引的话，可以选择全文搜索。
+            用于搜索很长一篇文章的时候，效果最好。
+            用在比较短的文本，如果就一两行字的，普通的 INDEX 也可以。
+            但其实对于全文搜索，我们并不会使用MySQL自带的该索引，而是会选择第三方软件如Sphinx，专门来做全文搜索。
+            #其他的如空间索引SPATIAL，了解即可，几乎不用
 
+        一、覆盖索引 (索引字段和查询字段一样)
+        select id from s1 where id=123; (id index)
+        这条就是覆盖索引了，命中索引，且从索引的数据结构直接就取到了id在硬盘的地址，速度很快
+        二、联合索引
+        select * from s1 where id=123 and name = 'lxl';(id & name index)
+        三, 索引合并：把多个单列索引合并使用组合索引能做到的事情，我们都可以用索引合并去解决，比如
+                           create index ne on s1(name,email);#组合索引
+                           我们完全可以单独为name和email创建索引
+                           组合索引可以命中：
+                           select * from s1 where name='egon' ;
+                           select * from s1 where name='egon' and email='adf';
+        四、索引原则
+        #1.最左前缀匹配原则，非常重要的原则，
+          create index ix_name_email on s1(name,email,)
+          - 最左前缀匹配：必须按照从左到右的顺序匹配
+          select * from s1 where name='egon'; #可以
+          select * from s1 where name='egon' and email='asdf'; #可以
+          select * from s1 where email='alex@oldboy.com'; #不可以
+          mysql会一直向右匹配直到遇到范围查询(>、<、between、like)就停止匹配，
+          比如a = 1 and b = 2 and c > 3 and d = 4 如果建立(a,b,c,d)顺序的索引，
+          d是用不到索引的，如果建立(a,b,d,c)的索引则都可以用到，a,b,d的顺序可以任意调整。
 
+          #2.=和in可以乱序，比如a = 1 and b = 2 and c = 3 建立(a,b,c)索引可以任意顺序，mysql的查询优化器
+          会帮你优化成索引可以识别的形式
 
+          #3.尽量选择区分度高的列作为索引,区分度的公式是count(distinct col)/count(*)，
+          表示字段不重复的比例，比例越大我们扫描的记录数越少，唯一键的区分度是1，而一些状态、
+          性别字段可能在大数据面前区分度就是0，那可能有人会问，这个比例有什么经验值吗？使用场景不同，
+          这个值也很难确定，一般需要join的字段我们都要求是0.1以上，即平均1条扫描10条记录
 
-
-
-
-
-
-
-
+          #4.索引列不能参与计算，保持列“干净”，比如from_unixtime(create_time) = ’2014-05-29’
+          就不能使用到索引，原因很简单，b+树中存的都是数据表中的字段值，
+          但进行检索时，需要把所有元素都应用函数才能比较，显然成本太大。
+          所以语句应该写成create_time = unix_timestamp(’2014-05-29’);

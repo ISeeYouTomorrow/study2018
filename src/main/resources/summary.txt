@@ -600,6 +600,8 @@ BTree索引 Hash索引
 
 41 mysql索引：
         磁盘一次IO时，不光把当前磁盘地址的数据，而是把相邻的数据也都读取到内存缓冲区内，每一次IO读取的数据我们称之为一页(page).
+        MyISAM的索引文件仅仅保存数据记录的地址。在MyISAM中，主索引和辅助索引（Secondary key）在结构上没有任何区别，只是主索引要求key是唯一的，而辅助索引的key可以重复,MyISAM的索引方式也叫做“非聚集”的。
+        InnoDB也使用B+Tree作为索引结构，但具体实现方式却与MyISAM截然不同.InnoDB表数据文件本身就是主索引.InnoDB的辅助索引data域存储相应记录主键的值而不是地址。聚集索引这种实现方式使得按主键的搜索十分高效，但是辅助索引搜索需要检索两遍索引：首先检索辅助索引获得主键，然后用主键到主索引中检索获得记录。
 
         索引分类
         1.普通索引index :加速查找
@@ -665,3 +667,39 @@ BTree索引 Hash索引
           就不能使用到索引，原因很简单，b+树中存的都是数据表中的字段值，
           但进行检索时，需要把所有元素都应用函数才能比较，显然成本太大。
           所以语句应该写成create_time = unix_timestamp(’2014-05-29’);
+42 springmvc循环依赖的解决：(A->B B->A)无法解决循环构造器依赖问题
+    bean的初始化步骤:（1）createBeanInstance：实例化，其实也就是调用对象的构造方法实例化对象
+                     （2）populateBean：填充属性，这一步主要是多bean的依赖属性进行填充
+                     （3）initializeBean：调用spring xml中的init 方法。
+    三级缓存:singletonObjects earlySingletonObjects singletonFactories;A创建Bean的时候,完成实例化，并将自己曝光到singletonFactories中，
+    在第二步发现依赖B，从singletonObjects缓存获取B，无法拿到因为B也需要初始化，B开始创建流程，发现依赖A，
+    尝试一级缓存singletonObjects(肯定没有，因为A还没初始化完全)，尝试二级缓存earlySingletonObjects（也没有），
+    尝试三级缓存singletonFactories，由于A通过ObjectFactory将自己提前曝光了，
+    所以B能够通过ObjectFactory.getObject拿到A对象(虽然A还没有初始化完全，但是总比没有好呀)，
+    B拿到A对象后顺利完成了初始化阶段1、2、3，完全初始化之后将自己放入到一级缓存singletonObjects中。
+    此时返回A中，A此时能拿到B的对象顺利完成自己的初始化阶段2、3，最终A也完成了初始化，进去了一级缓存singletonObjects中，
+    而且更加幸运的是，由于B拿到了A的对象引用，所以B现在hold住的A对象完成了初始化
+43  HashMap --- LinkedHashMap ---- TreeMap
+    HashMap 实质是Node<key,value>的数组table，Node是单向链表，next指向链表的下一个节点。
+    LinkedHashMap是HashMap的派生类，采用的hash算法和HashMap相同，但是它重新定义了Entry。LinkedHashMap中的Entry增加了两个指针 before 和 after，
+    它们分别用于维护双向链接列表。特别需要注意的是，next用于维护HashMap各个桶中Entry的连接顺序，before、after用于维护Entry插入的先后顺序的.
+    TreeMap 是AbstractMap的子类不是HashMap的子类
+    TreeMap 是一个有序的key-value集合，它是通过红黑树实现的。
+    TreeMap 继承于AbstractMap，所以它是一个Map，即一个key-value集合。
+    TreeMap 实现了NavigableMap接口，意味着它支持一系列的导航方法。比如返回有序的key集合。
+    TreeMap 实现了Cloneable接口，意味着它能被克隆。
+    TreeMap 实现了java.io.Serializable接口，意味着它支持序列化。
+    TreeMap基于红黑树（Red-Black tree）实现。该映射根据其键的自然顺序进行排序，或者根据创建映射时提供的 Comparator 进行排序，具体取决于使用的构造方法。
+    TreeMap的基本操作 containsKey、get、put 和 remove 的时间复杂度是 log(n) 。
+    另外，TreeMap是非同步的。 它的iterator 方法返回的迭代器是fail-fastl的。
+44  分布式：任务拆分，多个系统协调完成工作，高可用，高并发。集群：物理定义，多台机器，解决高可用的问题。
+
+    活锁：多线程竞争同一个资源，获取不到资源时不阻塞，不停重试资源。
+    死锁：多线程竞争同一个资源，两个线程互不想让，互相阻塞。
+
+    ZK: 类似支付宝平台的中间角色，完成分布式协作的功能，保证节点的高可用（节点故障），数据的一致性，通讯异常，网络分区。
+    1）master节点管理，Master高可用，保证唯一。
+    2）配置文件管理：统一把配置文件存放zk，由zk分发管理。
+    3)发布与订阅：生产者将数据发布到zk节点，供订阅者动态获取。
+    4）分布式锁：分布式环境访问统一资源，通过第三方锁竞争资源。保证数据的一致性。
+    5)集群的管理：Worker集群监控，节点故障，需要将任务转移到其他节点。Paxos协议
